@@ -65,17 +65,56 @@
       <artifactId>junit-jupiter</artifactId>
       <scope>test</scope>
     </dependency>
+    <!-- spring-boot-starter-parent fija org.testcontainers:testcontainers/jdbc/database-commons
+         a 1.19.8 en su BOM; sin fijarlas aquí explícitamente, esa versión transitiva más
+         vieja gana sobre postgresql/junit-jupiter:1.21.4 y el cliente Docker embebido
+         (1.19.8) queda incompatible con motores Docker recientes (API >= 1.40). -->
     <dependency>
       <groupId>org.testcontainers</groupId>
       <artifactId>postgresql</artifactId>
-      <version>1.20.1</version>
+      <version>1.21.4</version>
       <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.testcontainers</groupId>
       <artifactId>junit-jupiter</artifactId>
-      <version>1.20.1</version>
+      <version>1.21.4</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.testcontainers</groupId>
+      <artifactId>testcontainers</artifactId>
+      <version>1.21.4</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.testcontainers</groupId>
+      <artifactId>jdbc</artifactId>
+      <version>1.21.4</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.testcontainers</groupId>
+      <artifactId>database-commons</artifactId>
+      <version>1.21.4</version>
       <scope>test</scope>
     </dependency>
   </dependencies>
+
+  <build>
+    <plugins>
+      <!-- riwi.migrations.dir resuelto desde project.basedir en tiempo de build: estable sin
+           importar el cwd del runner (mvn CLI, IDE, CI), a diferencia de una ruta relativa
+           evaluada en tiempo de ejecución. -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <configuration>
+          <systemPropertyVariables>
+            <riwi.migrations.dir>${project.basedir}/../../database/migrations</riwi.migrations.dir>
+          </systemPropertyVariables>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
 </project>
