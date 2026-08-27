@@ -46,6 +46,13 @@ GRANT SELECT ON
     rw_message_embeddings, rw_copilot_queries, rw_copilot_citations, rw_user_conversations
 TO rw_app;
 
+-- rw_refresh_tokens: sin función/procedimiento dedicado (a diferencia de mensajes/usuarios),
+-- la rotación de tokens la maneja directamente el backend. SELECT para buscar por hash,
+-- INSERT para emitir uno nuevo, UPDATE solo para revoked_at (revocar) — nunca se edita el
+-- hash ni expires_at de un token ya emitido.
+GRANT SELECT, INSERT ON rw_refresh_tokens TO rw_app;
+GRANT UPDATE (revoked_at) ON rw_refresh_tokens TO rw_app;
+
 GRANT EXECUTE ON FUNCTION rw_set_current_user(uuid) TO rw_app;
 GRANT EXECUTE ON FUNCTION rw_current_user_id() TO rw_app;
 -- rw_app SÍ necesita EXECUTE aquí, aunque nunca la llame directamente: las políticas RLS de

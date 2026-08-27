@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>io.riwi.messaging</groupId>
+    <artifactId>riwi-messaging-parent</artifactId>
+    <version>0.1.0</version>
+  </parent>
+
+  <artifactId>riwi-domain</artifactId>
+  <packaging>jar</packaging>
+
+  <!-- Sin dependencias de Spring ni de ningún driver de base de datos: se verifica en la
+       sustentación con `mvn dependency:tree` que este módulo no arrastra spring-* ni
+       postgresql. -->
+  <dependencies>
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter</artifactId>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+</project>

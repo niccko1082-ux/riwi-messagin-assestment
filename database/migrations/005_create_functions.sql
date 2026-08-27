@@ -176,9 +176,13 @@ BEGIN
     INSERT INTO rw_message_revisions (message_id, previous_content, revision_type, edited_by)
     VALUES (p_message_id, v_old_content, 'delete', v_user_id);
 
+    -- content se redacta: sin esto, cualquier miembro del canal seguiría pudiendo leer el
+    -- texto original vía SELECT directo (RLS solo filtra por canal, no por is_deleted). El
+    -- contenido real ya quedó preservado arriba en rw_message_revisions.
     UPDATE rw_messages
        SET is_deleted = TRUE,
-           deleted_at = now()
+           deleted_at = now(),
+           content = '[mensaje eliminado]'
      WHERE message_id = p_message_id;
 END;
 $$;
@@ -202,9 +206,7 @@ AS $$
       FROM rw_message_embeddings e
       JOIN rw_messages m ON m.message_id = e.message_id
      WHERE m.is_deleted = FALSE
-       AND m.channel_id IN (
-             SELECT channel_id FROM rw_channel_members WHERE user_id = rw_current_user_id()
-           )
+       AND m.channel_id IN (SELECT rw_my_channel_ids())
      ORDER BY e.embedding <=> p_query_embedding
      LIMIT p_match_count;
 $$;
@@ -238,16 +240,17 @@ BEGIN
         (v_user_id, p_question, p_answer, p_tokens_used, p_had_sufficient_context, p_system_prompt_version)
     RETURNING query_id INTO v_query_id;
 
+    -- coalesce(..., 1, 0): array_length de un array vacío ('{}') es NULL, no 0, y un FOR con
+    -- límite superior NULL revienta con "upper bound of FOR loop cannot be null". El array
+    -- vacío es un caso normal (respuesta del copiloto sin citas), no una excepción.
     IF p_cited_message_ids IS NOT NULL THEN
-        FOR v_index IN 1 .. array_length(p_cited_message_ids, 1) LOOP
+        FOR v_index IN 1 .. coalesce(array_length(p_cited_message_ids, 1), 0) LOOP
             INSERT INTO rw_copilot_citations (query_id, message_id, similarity_score)
             SELECT v_query_id, p_cited_message_ids[v_index], p_similarity_scores[v_index]
              WHERE EXISTS (
                      SELECT 1 FROM rw_messages m
                       WHERE m.message_id = p_cited_message_ids[v_index]
-                        AND m.channel_id IN (
-                              SELECT channel_id FROM rw_channel_members WHERE user_id = v_user_id
-                            )
+                        AND m.channel_id IN (SELECT rw_my_channel_ids())
                    )
             ON CONFLICT DO NOTHING;
         END LOOP;
@@ -292,9 +295,15 @@ $$;
 
 CREATE FUNCTION rw_fail_embedding_job(p_job_id bigint)
 RETURNS void
-LANGUAGE sql
+LANGUAGE plpgsql
 SECURITY DEFINER
 SET search_path = public
 AS $$
+BEGIN
     UPDATE rw_embedding_jobs SET status = 'failed', processed_at = now() WHERE job_id = p_job_id;
+
+    IF NOT FOUND THEN
+        RAISE EXCEPTION 'el job de embedding % no existe', p_job_id USING ERRCODE = 'P0002';
+    END IF;
+END;
 $$;
