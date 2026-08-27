@@ -14,3 +14,24 @@ GRANT USAGE ON SCHEMA public TO rw_worker;
 GRANT SELECT ON rw_embedding_jobs, rw_messages TO rw_worker;
 GRANT EXECUTE ON FUNCTION rw_record_embedding(bigint, vector, text) TO rw_worker;
 GRANT EXECUTE ON FUNCTION rw_fail_embedding_job(bigint) TO rw_worker;
+
+-- Un mensaje puede borrarse (soft delete) entre el encolado del job y el poll del worker;
+-- rw_copilot_search_context ya excluye is_deleted, así que embeberlo sería una llamada pagada
+-- a NVIDIA sin uso. SECURITY DEFINER en vez de un GRANT UPDATE directo sobre
+-- rw_embedding_jobs: mantiene el mismo patrón que rw_record_embedding/rw_fail_embedding_job
+-- (rw_worker nunca escribe tablas directamente, solo vía funciones acotadas).
+CREATE FUNCTION rw_fail_deleted_message_embedding_jobs()
+RETURNS void
+LANGUAGE sql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+    UPDATE rw_embedding_jobs j
+       SET status = 'failed', processed_at = now()
+      FROM rw_messages m
+     WHERE m.message_id = j.message_id
+       AND j.status = 'pending'
+       AND m.is_deleted = TRUE;
+$$;
+
+GRANT EXECUTE ON FUNCTION rw_fail_deleted_message_embedding_jobs() TO rw_worker;

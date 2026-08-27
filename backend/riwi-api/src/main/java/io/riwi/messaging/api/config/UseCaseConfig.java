@@ -2,6 +2,9 @@ package io.riwi.messaging.api.config;
 
 import io.riwi.messaging.application.auth.LoginUseCase;
 import io.riwi.messaging.application.auth.RefreshTokenUseCase;
+import io.riwi.messaging.application.copilot.AskCopilotUseCase;
+import io.riwi.messaging.application.copilot.GetCopilotUsageUseCase;
+import io.riwi.messaging.application.copilot.ProcessEmbeddingJobsUseCase;
 import io.riwi.messaging.application.messaging.*;
 import io.riwi.messaging.application.user.GetMyProfileUseCase;
 import io.riwi.messaging.application.user.ListUsersUseCase;
@@ -86,5 +89,23 @@ public class UseCaseConfig {
     @Bean
     public ListUsersUseCase listUsersUseCase(UserRepository userRepository) {
         return new ListUsersUseCase(userRepository);
+    }
+
+    @Bean
+    public AskCopilotUseCase askCopilotUseCase(UserRepository userRepository, CopilotRepository copilotRepository,
+                                                EmbeddingProvider embeddingProvider,
+                                                ChatCompletionProvider chatCompletionProvider) {
+        return new AskCopilotUseCase(userRepository, copilotRepository, embeddingProvider, chatCompletionProvider);
+    }
+
+    @Bean
+    public ProcessEmbeddingJobsUseCase processEmbeddingJobsUseCase(EmbeddingJobRepository jobRepository,
+                                                                     EmbeddingProvider embeddingProvider) {
+        return new ProcessEmbeddingJobsUseCase(jobRepository, embeddingProvider);
+    }
+
+    @Bean
+    public GetCopilotUsageUseCase getCopilotUsageUseCase(CopilotRepository copilotRepository) {
+        return new GetCopilotUsageUseCase(copilotRepository);
     }
 }

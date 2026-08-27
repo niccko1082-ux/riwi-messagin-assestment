@@ -1,5 +1,6 @@
 package io.riwi.messaging.api.web;
 
+import io.riwi.messaging.domain.exception.AiProviderException;
 import io.riwi.messaging.domain.exception.ForbiddenException;
 import io.riwi.messaging.domain.exception.NotFoundException;
 import io.riwi.messaging.domain.exception.ValidationException;
@@ -36,6 +37,15 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(ValidationException.class)
     public ResponseEntity<ApiErrorResponse> handleValidation(ValidationException ex, HttpServletRequest request) {
         return build(HttpStatus.BAD_REQUEST, ex.getMessage(), request);
+    }
+
+    // El mensaje real (puede traer detalles de RestClientException: URLs, causas de red) solo
+    // va al log, nunca al cliente — a diferencia de los otros handlers, este envuelve fallas
+    // externas (NVIDIA NIM), no errores de negocio con mensaje seguro para mostrar.
+    @ExceptionHandler(AiProviderException.class)
+    public ResponseEntity<ApiErrorResponse> handleAiProvider(AiProviderException ex, HttpServletRequest request) {
+        log.warn("proveedor de IA no disponible [correlationId={}]: {}", MDC.get(CorrelationIdFilter.MDC_KEY), ex.getMessage());
+        return build(HttpStatus.BAD_GATEWAY, "el copiloto de IA no está disponible en este momento", request);
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
