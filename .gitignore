@@ -19,3 +19,7 @@ dist/
 *.log
 .idea/
 .vscode/
+
+# Artefactos locales de sesiones de navegador/skills
+.playwright-mcp/
+graphify-out/

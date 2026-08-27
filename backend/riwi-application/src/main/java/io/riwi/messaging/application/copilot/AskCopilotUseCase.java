@@ -16,7 +16,10 @@ import java.util.List;
 public class AskCopilotUseCase {
     public static final String SYSTEM_PROMPT_VERSION = "copilot-v1";
     private static final int MATCH_COUNT = 8;
-    private static final double MIN_SIMILARITY = 0.5;
+    // Calibrado empíricamente con llama-nemotron-embed-vl-1b-v2 (query vs passage separados):
+    // un acierto directo ronda 0.42; con 0.5 (calibración del modelo EOL anterior) hasta las
+    // respuestas correctas se marcaban como contexto insuficiente.
+    private static final double MIN_SIMILARITY = 0.35;
 
     private final UserRepository userRepository;
     private final CopilotRepository copilotRepository;
