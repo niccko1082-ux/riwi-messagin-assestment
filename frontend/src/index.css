@@ -434,6 +434,22 @@ label {
   font-size: 0.85rem;
 }
 
+.history-loading {
+  align-self: center;
+}
+
+.history-error {
+  align-self: center;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  background: var(--danger-soft);
+  color: var(--danger);
+  border-radius: 8px;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.85rem;
+}
+
 .composer {
   display: flex;
   gap: 0.5rem;

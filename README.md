@@ -10,10 +10,12 @@ solo con base en mensajes a los que el usuario tiene acceso.
 - **Frontend**: React + Vite + TypeScript, WebSocket (STOMP) para tiempo real.
 - **IA**: NVIDIA NIM (API compatible con OpenAI) para embeddings y chat completion.
 
-Ver `docs/data-model.md` (con diagrama E-R, [`docs/er-diagram.png`](docs/er-diagram.png)) y
-`ARCHITECTURE.md` para el diseño detallado, `DECISIONS.md` para las decisiones técnicas
-registradas durante el desarrollo, y [`docs/evidencias/`](docs/evidencias/) para capturas de
-ejecución real (login, mensaje en tiempo real, búsqueda, copiloto con citas y negativa
+Ver [`SUSTENTACION.md`](SUSTENTACION.md) para el mapa de cada requerimiento de la prueba
+técnica a dónde se cumple en este repo. `docs/data-model.md` (con diagrama E-R,
+[`docs/er-diagram.png`](docs/er-diagram.png)) y `ARCHITECTURE.md` tienen el diseño detallado,
+`DECISIONS.md` las decisiones técnicas registradas durante el desarrollo, y
+[`docs/evidencias/`](docs/evidencias/) capturas de ejecución real (login, mensaje en tiempo
+real, búsqueda, copiloto con citas y negativa
 correcta por falta de permisos).
 
 ## Arranque rápido (Docker Compose)

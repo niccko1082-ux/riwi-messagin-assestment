@@ -39,6 +39,9 @@ const resources = {
         sendFailed: 'No se pudo enviar',
         retry: 'Reintentar',
         dismiss: 'Descartar',
+        loadingHistory: 'Cargando…',
+        historyError: 'No se pudo cargar el historial de mensajes.',
+        emptyChannel: 'Aún no hay mensajes en esta conversación.',
       },
       copilot: {
         title: 'Copiloto',
@@ -105,6 +108,9 @@ const resources = {
         sendFailed: 'Failed to send',
         retry: 'Retry',
         dismiss: 'Dismiss',
+        loadingHistory: 'Loading…',
+        historyError: 'Could not load message history.',
+        emptyChannel: 'No messages in this conversation yet.',
       },
       copilot: {
         title: 'Copilot',

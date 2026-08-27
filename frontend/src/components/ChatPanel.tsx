@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Client } from '@stomp/stompjs';
@@ -60,7 +60,10 @@ export function ChatPanel({ channelId, stompClient, wsEpoch, onActivity }: Props
   const [searchTerm, setSearchTerm] = useState('');
   const [searchResults, setSearchResults] = useState<MessageSearchResult[] | null>(null);
   const [pendingSends, setPendingSends] = useState<PendingSend[]>([]);
+  const [isLoadingHistory, setIsLoadingHistory] = useState(false);
+  const [historyError, setHistoryError] = useState<string | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
   // El efecto de reset (abajo) limpia el estado al cambiar de canal, pero no cancela un envío
   // en curso: sin esta ref, attemptSend aplicaría su resultado tardío sobre el canal nuevo
   // (closure obsoleta sobre `channelId`, que sí necesitamos comparar en el momento en que la
@@ -70,18 +73,34 @@ export function ChatPanel({ channelId, stompClient, wsEpoch, onActivity }: Props
     channelIdRef.current = channelId;
   }, [channelId]);
 
+  // Coordina el efecto de scroll de abajo: cargar mensajes anteriores (prepend) debe
+  // preservar la posición actual, mientras que un mensaje nuevo (append) debe llevar el
+  // scroll al final. `prependAnchorRef` guarda el scrollHeight justo antes de anteponer.
+  const lastActionRef = useRef<'initial' | 'prepend' | 'append'>('initial');
+  const prependAnchorRef = useRef<number | null>(null);
+
   const loadPage = useCallback(
     async (channel: string, cursor: number | null) => {
+      lastActionRef.current = cursor === null ? 'initial' : 'prepend';
+      if (cursor !== null && messagesContainerRef.current) {
+        prependAnchorRef.current = messagesContainerRef.current.scrollHeight;
+      }
+      setIsLoadingHistory(true);
+      setHistoryError(null);
       try {
         const page = await getHistory(channel, cursor);
         const asc = [...page.items].reverse();
         setMessages((prev) => (cursor === null ? asc : [...asc, ...prev]));
         setNextCursor(page.nextCursor);
       } catch (err) {
+        prependAnchorRef.current = null;
+        setHistoryError(t('chat.historyError'));
         showError(err);
+      } finally {
+        setIsLoadingHistory(false);
       }
     },
-    [showError],
+    [showError, t],
   );
 
   useEffect(() => {
@@ -90,6 +109,7 @@ export function ChatPanel({ channelId, stompClient, wsEpoch, onActivity }: Props
     setSearchResults(null);
     setEditingId(null);
     setPendingSends([]);
+    setHistoryError(null);
     if (channelId) void loadPage(channelId, null);
   }, [channelId, loadPage]);
 
@@ -107,6 +127,7 @@ export function ChatPanel({ channelId, stompClient, wsEpoch, onActivity }: Props
         switch (event.type) {
           case 'SENT':
             if (!event.message || prev.some((m) => m.id === event.messageId)) return prev;
+            lastActionRef.current = 'append';
             return [...prev, event.message];
           case 'EDITED':
             return prev.map((m) =>
@@ -125,9 +146,23 @@ export function ChatPanel({ channelId, stompClient, wsEpoch, onActivity }: Props
     return () => sub.unsubscribe();
   }, [channelId, stompClient, wsEpoch, onActivity]);
 
+  // useLayoutEffect (no useEffect): debe correr antes del pintado del navegador para que el
+  // salto de scrollTop en el caso 'prepend' sea invisible al usuario.
+  useLayoutEffect(() => {
+    const container = messagesContainerRef.current;
+    if (lastActionRef.current === 'prepend') {
+      if (container && prependAnchorRef.current !== null) {
+        container.scrollTop += container.scrollHeight - prependAnchorRef.current;
+      }
+      prependAnchorRef.current = null;
+      return;
+    }
+    bottomRef.current?.scrollIntoView({ behavior: lastActionRef.current === 'initial' ? 'auto' : 'smooth' });
+  }, [messages]);
+
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages.length, pendingSends.length]);
+    if (pendingSends.length > 0) bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [pendingSends.length]);
 
   // Compartida por onSend (primer intento) y retrySend (reintento tras un fallo): mantiene un
   // único punto donde se resuelve pending -> enviado/fallido.
@@ -141,6 +176,7 @@ export function ChatPanel({ channelId, stompClient, wsEpoch, onActivity }: Props
       // filtraría en el canal equivocado.
       if (channelIdRef.current !== targetChannel) return;
       // El eco por WS puede llegar antes o después; se dedup por id en ambos caminos.
+      lastActionRef.current = 'append';
       setMessages((prev) => (prev.some((m) => m.id === sent.id) ? prev : [...prev, sent]));
       setPendingSends((prev) => prev.filter((p) => p.tempId !== tempId));
       onActivity();
@@ -246,10 +282,22 @@ export function ChatPanel({ channelId, stompClient, wsEpoch, onActivity }: Props
           ))}
         </div>
       ) : (
-        <div className="messages">
+        <div className="messages" ref={messagesContainerRef}>
+          {isLoadingHistory && messages.length === 0 && !historyError && (
+            <p className="muted history-loading">{t('chat.loadingHistory')}</p>
+          )}
+          {historyError && (
+            <div className="history-error">
+              <span>{historyError}</span>
+              <button onClick={() => void loadPage(channelId, nextCursor)}>{t('chat.retry')}</button>
+            </div>
+          )}
+          {!isLoadingHistory && !historyError && messages.length === 0 && pendingSends.length === 0 && (
+            <p className="muted">{t('chat.emptyChannel')}</p>
+          )}
           {nextCursor !== null && (
-            <button className="load-more" onClick={() => void loadPage(channelId, nextCursor)}>
-              {t('chat.loadMore')}
+            <button className="load-more" disabled={isLoadingHistory} onClick={() => void loadPage(channelId, nextCursor)}>
+              {isLoadingHistory ? t('chat.loadingHistory') : t('chat.loadMore')}
             </button>
           )}
           {messages.map((m) => (
