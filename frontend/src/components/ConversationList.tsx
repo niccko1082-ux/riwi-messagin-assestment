@@ -23,6 +23,9 @@ export function ConversationList({ conversations, selectedId, onSelect }: Props)
             onClick={() => onSelect(c.channelId)}
           >
             <span className="conversation-name">
+              <span className="channel-glyph" aria-hidden="true">
+                {c.channelType === 'group' ? '#' : '@'}
+              </span>
               {c.name ?? t('conversations.direct')}
             </span>
             {c.lastMessageContent && (

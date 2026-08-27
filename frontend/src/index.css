@@ -1,15 +1,36 @@
 :root {
-  --bg: #f5f6f8;
+  /* Cromo oscuro: barra superior y panel de conversaciones, fijos como el activity bar de un
+     IDE — permanecen quietos mientras el contenido (mensajes) cambia. */
+  --ink-900: #14171c;
+  --ink-800: #1b1f26;
+  --ink-700: #2a2f38;
+  --ink-500: #7d8492;
+
+  /* Superficie de lectura: papel cálido, no blanco puro — reduce fatiga en sesiones largas de
+     chat sin caer en el cliché crema+serif de una landing. */
+  --paper: #faf8f4;
   --panel: #ffffff;
-  --border: #dde1e6;
-  --text: #1f2328;
+  --border: #e4ded3;
+  --text: #1b1e23;
   --muted: #6b7280;
-  --accent: #4f46e5;
-  --accent-soft: #eef2ff;
-  --danger: #b91c1c;
-  --warning-bg: #fef3c7;
-  --warning-text: #92400e;
-  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+
+  /* Cobre como acento único: distingue de la paleta índigo/violeta genérica de SaaS, y
+     evoca el color de una terminal ámbar sin ser el verde ácido por defecto. */
+  --accent: #c8722e;
+  --accent-strong: #a85c1f;
+  --accent-soft: #f6e3d0;
+
+  --danger: #b3402b;
+  --danger-soft: #f4ddd6;
+  --warning-bg: #f3e2c2;
+  --warning-text: #7a4a12;
+  --success: #3f7d52;
+
+  --font-display: 'Space Grotesk', 'Segoe UI', sans-serif;
+  --font-body: 'IBM Plex Sans', system-ui, -apple-system, sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace;
+
+  font-family: var(--font-body);
   color: var(--text);
 }
 
@@ -19,20 +40,51 @@
 
 body {
   margin: 0;
-  background: var(--bg);
+  background: var(--paper);
 }
 
 #root {
   height: 100vh;
 }
 
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    transition-duration: 0.001ms !important;
+  }
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+h1,
+h2,
+h3 {
+  margin: 0 0 0.5rem;
+  font-family: var(--font-display);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
 button {
   font: inherit;
+  font-family: var(--font-display);
+  font-weight: 600;
   cursor: pointer;
   border: 1px solid var(--border);
-  border-radius: 6px;
+  border-radius: 8px;
   background: var(--panel);
-  padding: 0.45rem 0.9rem;
+  color: var(--text);
+  padding: 0.5rem 1rem;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+button:hover {
+  border-color: var(--accent);
 }
 
 button[type='submit'] {
@@ -41,15 +93,23 @@ button[type='submit'] {
   color: #fff;
 }
 
+button[type='submit']:hover {
+  background: var(--accent-strong);
+  border-color: var(--accent-strong);
+}
+
 button:disabled {
   opacity: 0.5;
   cursor: default;
+  border-color: var(--border);
 }
 
 button.link {
   border: none;
   background: none;
-  color: var(--accent);
+  font-family: var(--font-body);
+  font-weight: 400;
+  color: var(--accent-strong);
   padding: 0 0.25rem;
   font-size: 0.85rem;
 }
@@ -58,10 +118,19 @@ input,
 textarea,
 select {
   font: inherit;
+  font-family: var(--font-body);
   border: 1px solid var(--border);
-  border-radius: 6px;
-  padding: 0.45rem 0.6rem;
+  border-radius: 8px;
+  padding: 0.5rem 0.7rem;
   width: 100%;
+  background: var(--panel);
+  color: var(--text);
+}
+
+input:focus,
+textarea:focus,
+select:focus {
+  border-color: var(--accent);
 }
 
 label {
@@ -71,14 +140,31 @@ label {
   font-size: 0.9rem;
 }
 
-h1,
-h2,
-h3 {
-  margin: 0 0 0.5rem;
-}
-
 .muted {
   color: var(--muted);
+}
+
+/* ── Barra superior: única marca permanente de la app ─ */
+.topbar {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  height: 3rem;
+  padding: 0 1rem;
+  background: var(--ink-900);
+  border-bottom: 1px solid var(--ink-700);
+}
+
+.wordmark {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.05rem;
+  letter-spacing: -0.02em;
+  color: #fff;
+}
+
+.wordmark-dot {
+  color: var(--accent);
 }
 
 /* ── Login ─────────────────────────────────────────── */
@@ -87,10 +173,11 @@ h3 {
   display: grid;
   place-items: center;
   padding: 1rem;
+  background: var(--ink-900);
 }
 
 .login-card {
-  background: var(--panel);
+  background: var(--paper);
   border: 1px solid var(--border);
   border-radius: 12px;
   padding: 2rem;
@@ -100,9 +187,27 @@ h3 {
   gap: 1rem;
 }
 
-/* ── Layout de 3 zonas ─────────────────────────────── */
-.app-layout {
+.login-card h1 {
+  font-size: 1.3rem;
+}
+
+.login-card h2 {
+  font-family: var(--font-body);
+  font-weight: 500;
+  font-size: 0.95rem;
+  color: var(--muted);
+}
+
+/* ── Layout de app ─────────────────────────────────── */
+.app-shell {
   height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.app-layout {
+  flex: 1;
+  min-height: 0;
   display: grid;
   grid-template-columns: minmax(0, 3fr) minmax(0, 1.4fr) minmax(0, 1fr);
   gap: 1px;
@@ -110,7 +215,7 @@ h3 {
 }
 
 .zone {
-  background: var(--panel);
+  background: var(--paper);
   overflow-y: auto;
   min-height: 0;
 }
@@ -132,8 +237,8 @@ h3 {
 
   .mobile-tabs {
     display: flex;
-    background: var(--panel);
-    border-bottom: 1px solid var(--border);
+    background: var(--ink-900);
+    border-bottom: 1px solid var(--ink-700);
   }
 
   .mobile-tabs button {
@@ -141,10 +246,12 @@ h3 {
     border: none;
     border-radius: 0;
     padding: 0.75rem;
+    background: transparent;
+    color: var(--ink-500);
   }
 
   .mobile-tabs button.active {
-    color: var(--accent);
+    color: #fff;
     border-bottom: 2px solid var(--accent);
   }
 
@@ -163,11 +270,21 @@ h3 {
   }
 }
 
-/* ── Conversaciones ───────────────────────────────── */
+/* ── Conversaciones: cromo oscuro, fijo ───────────────── */
 .sidebar {
-  border-right: 1px solid var(--border);
+  background: var(--ink-900);
+  border-right: 1px solid var(--ink-700);
   padding: 1rem;
   overflow-y: auto;
+  color: #fff;
+}
+
+.sidebar h2 {
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--ink-500);
 }
 
 .conversation-list {
@@ -176,35 +293,50 @@ h3 {
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
+  gap: 0.15rem;
 }
 
 .conversation {
   width: 100%;
   text-align: left;
-  border: none;
+  border: 1px solid transparent;
+  background: transparent;
+  color: #fff;
   display: flex;
   flex-direction: column;
   gap: 0.15rem;
-  padding: 0.6rem;
+  padding: 0.55rem 0.6rem;
   border-radius: 8px;
 }
 
 .conversation:hover {
-  background: var(--bg);
+  border-color: var(--ink-700);
+  background: var(--ink-800);
 }
 
 .conversation.selected {
-  background: var(--accent-soft);
+  background: var(--ink-700);
+  border-color: var(--accent);
 }
 
 .conversation-name {
   font-weight: 600;
+  display: flex;
+  align-items: baseline;
+  gap: 0.35rem;
+}
+
+/* # canal de grupo, @ mensaje directo — la misma convención que IRC/Slack, información real
+   sobre el tipo de canal, no decoración. */
+.channel-glyph {
+  font-family: var(--font-mono);
+  color: var(--accent);
+  font-weight: 500;
 }
 
 .conversation-preview {
   font-size: 0.82rem;
-  color: var(--muted);
+  color: var(--ink-500);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -213,9 +345,10 @@ h3 {
 
 .badge {
   align-self: flex-start;
-  font-size: 0.75rem;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
   background: var(--accent);
-  color: #fff;
+  color: #14171c;
   border-radius: 999px;
   padding: 0.05rem 0.5rem;
 }
@@ -252,9 +385,10 @@ h3 {
 
 .message {
   max-width: 75%;
-  padding: 0.5rem 0.75rem;
-  border-radius: 10px;
-  background: var(--bg);
+  padding: 0.55rem 0.8rem;
+  border-radius: 12px;
+  background: var(--panel);
+  border: 1px solid var(--border);
   align-self: flex-start;
   word-break: break-word;
 }
@@ -262,13 +396,19 @@ h3 {
 .message.own {
   align-self: flex-end;
   background: var(--accent-soft);
+  border-color: var(--accent-soft);
+}
+
+.message-content {
+  font-size: 0.95rem;
 }
 
 .message-meta {
   display: block;
-  font-size: 0.78rem;
+  font-family: var(--font-mono);
+  font-size: 0.74rem;
   color: var(--muted);
-  margin-top: 0.15rem;
+  margin-top: 0.25rem;
 }
 
 .edit-row {
@@ -286,11 +426,14 @@ h3 {
   gap: 0.5rem;
   padding: 0.75rem;
   border-top: 1px solid var(--border);
+  background: var(--panel);
 }
 
 mark {
-  background: #fde68a;
+  background: var(--accent-soft);
+  color: var(--accent-strong);
   border-radius: 3px;
+  padding: 0 0.1rem;
 }
 
 /* ── Copiloto ─────────────────────────────────────── */
@@ -310,8 +453,14 @@ mark {
 
 .copilot-answer {
   border: 1px solid var(--border);
+  background: var(--panel);
   border-radius: 10px;
-  padding: 0.75rem;
+  padding: 0.9rem;
+}
+
+.copilot-answer p {
+  font-size: 0.95rem;
+  line-height: 1.5;
 }
 
 .warning {
@@ -319,6 +468,7 @@ mark {
   color: var(--warning-text);
   border-radius: 8px;
   padding: 0.5rem 0.75rem;
+  font-size: 0.9rem;
 }
 
 .citations {
@@ -326,22 +476,50 @@ mark {
   margin: 0;
   padding: 0;
   display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-  font-size: 0.9rem;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  align-items: center;
+}
+
+/* Cada cita se lee como una referencia de código a un mensaje fuente: mismo tratamiento
+   visual que un hash de commit o un identificador en un stack trace. */
+.citation-chip {
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  font-weight: 500;
+  background: var(--paper);
+  border: 1px solid var(--accent);
+  color: var(--accent-strong);
+  border-radius: 6px;
+  padding: 0.2rem 0.5rem;
+}
+
+.citation-chip:hover {
+  background: var(--accent-soft);
+}
+
+.citation-score {
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  color: var(--muted);
 }
 
 .copilot-usage dl {
   display: grid;
   grid-template-columns: auto 1fr;
-  gap: 0.25rem 1rem;
+  gap: 0.3rem 1rem;
   margin: 0;
   font-size: 0.9rem;
 }
 
+.copilot-usage dt {
+  color: var(--muted);
+}
+
 .copilot-usage dd {
   margin: 0;
-  font-weight: 600;
+  font-family: var(--font-mono);
+  font-weight: 500;
 }
 
 /* ── Perfil ───────────────────────────────────────── */
@@ -352,7 +530,7 @@ mark {
 }
 
 .saved-note {
-  color: #15803d;
+  color: var(--success);
   font-size: 0.85rem;
 }
 
@@ -360,6 +538,10 @@ mark {
   color: var(--danger);
   border-color: var(--danger);
   align-self: flex-start;
+}
+
+.logout:hover {
+  background: var(--danger-soft);
 }
 
 .lang-switch {
@@ -372,11 +554,12 @@ mark {
   bottom: 1rem;
   left: 50%;
   transform: translateX(-50%);
-  background: var(--danger);
+  background: var(--ink-900);
   color: #fff;
   padding: 0.75rem 1.25rem;
   border-radius: 8px;
-  box-shadow: 0 4px 16px rgb(0 0 0 / 0.25);
+  border-left: 3px solid var(--danger);
+  box-shadow: 0 8px 24px rgb(0 0 0 / 0.35);
   cursor: pointer;
   max-width: min(36rem, calc(100vw - 2rem));
   z-index: 100;
@@ -384,6 +567,7 @@ mark {
 
 .toast-ref {
   display: block;
+  font-family: var(--font-mono);
   font-size: 0.75rem;
-  opacity: 0.8;
+  opacity: 0.7;
 }

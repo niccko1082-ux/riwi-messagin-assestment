@@ -5,6 +5,14 @@ import { askCopilot, getCopilotUsage } from '../api/endpoints';
 import type { CopilotAnswer, CopilotUsage } from '../api/types';
 import { useErrorToast } from './ErrorToast';
 
+// El modelo responde en markdown ligero (**énfasis**); se parsea solo ese patrón a <strong>,
+// nunca con dangerouslySetInnerHTML, por la misma razón que ChatPanel.renderHighlighted.
+function renderAnswer(text: string) {
+  return text.split(/\*\*(.+?)\*\*/g).map((part, i) =>
+    i % 2 === 1 ? <strong key={i}>{part}</strong> : <span key={i}>{part}</span>,
+  );
+}
+
 export function CopilotPanel({ onCitationClick }: { onCitationClick: (messageId: number) => void }) {
   const { t, i18n } = useTranslation();
   const { showError } = useErrorToast();
@@ -55,17 +63,17 @@ export function CopilotPanel({ onCitationClick }: { onCitationClick: (messageId:
           {!answer.hadSufficientContext && (
             <p className="warning">{t('copilot.insufficientContext')}</p>
           )}
-          <p>{answer.answer}</p>
+          <p>{renderAnswer(answer.answer)}</p>
           {answer.citations.length > 0 && (
             <>
               <h3>{t('copilot.citations')}</h3>
               <ul className="citations">
                 {answer.citations.map((c) => (
                   <li key={c.messageId}>
-                    <button className="link" onClick={() => onCitationClick(c.messageId)}>
-                      [msg {c.messageId}]
+                    <button className="citation-chip" onClick={() => onCitationClick(c.messageId)}>
+                      msg·{c.messageId}
                     </button>{' '}
-                    <span className="muted">
+                    <span className="citation-score">
                       {(c.similarityScore * 100).toFixed(0)}% {t('copilot.similarity')}
                     </span>
                   </li>

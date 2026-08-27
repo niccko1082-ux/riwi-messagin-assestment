@@ -50,43 +50,50 @@ export function AppPage() {
   }, []);
 
   return (
-    <div className="app-layout">
-      <nav className="mobile-tabs">
-        <button className={tab === 'chat' ? 'active' : ''} onClick={() => setTab('chat')}>
-          {t('nav.chat')}
-        </button>
-        <button className={tab === 'copilot' ? 'active' : ''} onClick={() => setTab('copilot')}>
-          {t('nav.copilot')}
-        </button>
-        <button className={tab === 'profile' ? 'active' : ''} onClick={() => setTab('profile')}>
-          {t('nav.profile')}
-        </button>
-      </nav>
+    <div className="app-shell">
+      <header className="topbar">
+        <span className="wordmark">
+          riwi<span className="wordmark-dot">.</span>msg
+        </span>
+      </header>
+      <div className="app-layout">
+        <nav className="mobile-tabs">
+          <button className={tab === 'chat' ? 'active' : ''} onClick={() => setTab('chat')}>
+            {t('nav.chat')}
+          </button>
+          <button className={tab === 'copilot' ? 'active' : ''} onClick={() => setTab('copilot')}>
+            {t('nav.copilot')}
+          </button>
+          <button className={tab === 'profile' ? 'active' : ''} onClick={() => setTab('profile')}>
+            {t('nav.profile')}
+          </button>
+        </nav>
 
-      <section className={`zone zone-chat ${tab === 'chat' ? 'visible' : ''}`}>
-        <aside className="sidebar">
-          <h2>{t('conversations.title')}</h2>
-          <ConversationList
-            conversations={conversations}
-            selectedId={selectedChannel}
-            onSelect={setSelectedChannel}
+        <section className={`zone zone-chat ${tab === 'chat' ? 'visible' : ''}`}>
+          <aside className="sidebar">
+            <h2>{t('conversations.title')}</h2>
+            <ConversationList
+              conversations={conversations}
+              selectedId={selectedChannel}
+              onSelect={setSelectedChannel}
+            />
+          </aside>
+          <ChatPanel
+            channelId={selectedChannel}
+            stompClient={stompClient}
+            wsEpoch={wsEpoch}
+            onActivity={refreshConversations}
           />
-        </aside>
-        <ChatPanel
-          channelId={selectedChannel}
-          stompClient={stompClient}
-          wsEpoch={wsEpoch}
-          onActivity={refreshConversations}
-        />
-      </section>
+        </section>
 
-      <section className={`zone zone-copilot ${tab === 'copilot' ? 'visible' : ''}`}>
-        <CopilotPanel onCitationClick={onCitationClick} />
-      </section>
+        <section className={`zone zone-copilot ${tab === 'copilot' ? 'visible' : ''}`}>
+          <CopilotPanel onCitationClick={onCitationClick} />
+        </section>
 
-      <section className={`zone zone-profile ${tab === 'profile' ? 'visible' : ''}`}>
-        <ProfilePanel />
-      </section>
+        <section className={`zone zone-profile ${tab === 'profile' ? 'visible' : ''}`}>
+          <ProfilePanel />
+        </section>
+      </div>
     </div>
   );
 }
