@@ -20,6 +20,8 @@ Analizando el corpus de `seed.json` (usuarios, canales y mensajes de ejemplo de 
 
 ## 2. Diagrama Entidad-Relación
 
+Renderizado: [`er-diagram.png`](./er-diagram.png).
+
 ```mermaid
 erDiagram
     RW_USERS ||--o{ RW_CHANNEL_MEMBERS : "es miembro de"

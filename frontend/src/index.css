@@ -399,6 +399,19 @@ label {
   border-color: var(--accent-soft);
 }
 
+.message.pending {
+  opacity: 0.65;
+}
+
+.message.failed {
+  background: var(--danger-soft);
+  border-color: var(--danger);
+}
+
+.message.failed .message-meta em {
+  color: var(--danger);
+}
+
 .message-content {
   font-size: 0.95rem;
 }

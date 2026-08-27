@@ -21,6 +21,22 @@ interface Props {
   onActivity: () => void;
 }
 
+// Estado de envío optimista (solo cliente): un mensaje 'pending' nunca llega a persistirse en
+// rw_messages si falla — no es un estado de negocio, por eso vive fuera del enum de la BD
+// (sent|edited|deleted, ver docs/data-model.md §1) y se renderiza aparte de `messages`.
+interface PendingSend {
+  tempId: string;
+  content: string;
+  status: 'pending' | 'failed';
+}
+
+// crypto.randomUUID() solo existe en contextos seguros (HTTPS o localhost) — se rompería si
+// la app se sirve por HTTP plano desde una IP de LAN. Solo necesitamos una clave local única
+// para React, no un UUID real.
+function genTempId() {
+  return crypto.randomUUID ? crypto.randomUUID() : `tmp-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+}
+
 // ts_headline marca coincidencias con <mark>…</mark> pero NO escapa el HTML del contenido
 // del mensaje: inyectarlo con dangerouslySetInnerHTML sería XSS almacenado. Se parsean solo
 // los marcadores y el resto se renderiza como texto.
@@ -43,7 +59,16 @@ export function ChatPanel({ channelId, stompClient, wsEpoch, onActivity }: Props
   const [editDraft, setEditDraft] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [searchResults, setSearchResults] = useState<MessageSearchResult[] | null>(null);
+  const [pendingSends, setPendingSends] = useState<PendingSend[]>([]);
   const bottomRef = useRef<HTMLDivElement>(null);
+  // El efecto de reset (abajo) limpia el estado al cambiar de canal, pero no cancela un envío
+  // en curso: sin esta ref, attemptSend aplicaría su resultado tardío sobre el canal nuevo
+  // (closure obsoleta sobre `channelId`, que sí necesitamos comparar en el momento en que la
+  // promesa resuelve, no en el momento en que se creó).
+  const channelIdRef = useRef(channelId);
+  useEffect(() => {
+    channelIdRef.current = channelId;
+  }, [channelId]);
 
   const loadPage = useCallback(
     async (channel: string, cursor: number | null) => {
@@ -64,12 +89,20 @@ export function ChatPanel({ channelId, stompClient, wsEpoch, onActivity }: Props
     setNextCursor(null);
     setSearchResults(null);
     setEditingId(null);
+    setPendingSends([]);
     if (channelId) void loadPage(channelId, null);
   }, [channelId, loadPage]);
 
   useEffect(() => {
     if (!channelId || !stompClient || !stompClient.connected) return;
     const sub = subscribeToChannel(stompClient, channelId, (event) => {
+      // El servidor publica por WS antes de responder el POST (MessageController): el eco
+      // propio puede llegar antes que la promesa de sendMessage resuelva. Si es así, la
+      // burbuja "Enviando…" seguiría visible junto a la ya confirmada hasta que attemptSend
+      // la limpiara — se adelanta aquí para evitar el duplicado visual.
+      if (event.type === 'SENT' && event.message?.senderId === userId) {
+        setPendingSends((p) => p.filter((ps) => ps.status !== 'pending'));
+      }
       setMessages((prev) => {
         switch (event.type) {
           case 'SENT':
@@ -94,20 +127,49 @@ export function ChatPanel({ channelId, stompClient, wsEpoch, onActivity }: Props
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages.length]);
+  }, [messages.length, pendingSends.length]);
+
+  // Compartida por onSend (primer intento) y retrySend (reintento tras un fallo): mantiene un
+  // único punto donde se resuelve pending -> enviado/fallido.
+  async function attemptSend(tempId: string, content: string) {
+    const targetChannel = channelId;
+    if (!targetChannel) return;
+    try {
+      const sent = await sendMessage(targetChannel, content);
+      // Si el usuario cambió de canal mientras la petición estaba en curso, el estado ya se
+      // reseteó para el canal nuevo (efecto de arriba) — aplicar el resultado ahora lo
+      // filtraría en el canal equivocado.
+      if (channelIdRef.current !== targetChannel) return;
+      // El eco por WS puede llegar antes o después; se dedup por id en ambos caminos.
+      setMessages((prev) => (prev.some((m) => m.id === sent.id) ? prev : [...prev, sent]));
+      setPendingSends((prev) => prev.filter((p) => p.tempId !== tempId));
+      onActivity();
+    } catch (err) {
+      if (channelIdRef.current !== targetChannel) return;
+      setPendingSends((prev) => prev.map((p) => (p.tempId === tempId ? { ...p, status: 'failed' } : p)));
+      showError(err);
+    }
+  }
 
   async function onSend(e: FormEvent) {
     e.preventDefault();
     if (!channelId || !draft.trim()) return;
-    try {
-      const sent = await sendMessage(channelId, draft.trim());
-      // El eco por WS puede llegar antes o después; se dedup por id en ambos caminos.
-      setMessages((prev) => (prev.some((m) => m.id === sent.id) ? prev : [...prev, sent]));
-      setDraft('');
-      onActivity();
-    } catch (err) {
-      showError(err);
-    }
+    const content = draft.trim();
+    const tempId = genTempId();
+    setPendingSends((prev) => [...prev, { tempId, content, status: 'pending' }]);
+    setDraft('');
+    void attemptSend(tempId, content);
+  }
+
+  function retrySend(tempId: string) {
+    const pending = pendingSends.find((p) => p.tempId === tempId);
+    if (!pending) return;
+    setPendingSends((prev) => prev.map((p) => (p.tempId === tempId ? { ...p, status: 'pending' } : p)));
+    void attemptSend(tempId, pending.content);
+  }
+
+  function dismissFailed(tempId: string) {
+    setPendingSends((prev) => prev.filter((p) => p.tempId !== tempId));
   }
 
   async function onSaveEdit(messageId: number) {
@@ -228,6 +290,26 @@ export function ChatPanel({ channelId, stompClient, wsEpoch, onActivity }: Props
                   </span>
                 </>
               )}
+            </div>
+          ))}
+          {pendingSends.map((p) => (
+            <div key={p.tempId} className={`message own ${p.status}`}>
+              <span className="message-content">{p.content}</span>
+              <span className="message-meta">
+                {p.status === 'pending' ? (
+                  <em>{t('chat.sending')}</em>
+                ) : (
+                  <>
+                    <em>{t('chat.sendFailed')}</em>
+                    <button className="link" onClick={() => retrySend(p.tempId)}>
+                      {t('chat.retry')}
+                    </button>
+                    <button className="link" onClick={() => dismissFailed(p.tempId)}>
+                      {t('chat.dismiss')}
+                    </button>
+                  </>
+                )}
+              </span>
             </div>
           ))}
           <div ref={bottomRef} />

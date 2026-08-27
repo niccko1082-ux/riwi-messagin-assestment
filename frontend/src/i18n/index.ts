@@ -35,6 +35,10 @@ const resources = {
         noResults: 'Sin resultados',
         closeSearch: 'Cerrar búsqueda',
         confirmDelete: '¿Eliminar este mensaje?',
+        sending: 'Enviando…',
+        sendFailed: 'No se pudo enviar',
+        retry: 'Reintentar',
+        dismiss: 'Descartar',
       },
       copilot: {
         title: 'Copiloto',
@@ -97,6 +101,10 @@ const resources = {
         noResults: 'No results',
         closeSearch: 'Close search',
         confirmDelete: 'Delete this message?',
+        sending: 'Sending…',
+        sendFailed: 'Failed to send',
+        retry: 'Retry',
+        dismiss: 'Dismiss',
       },
       copilot: {
         title: 'Copilot',

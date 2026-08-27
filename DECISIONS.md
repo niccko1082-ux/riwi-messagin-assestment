@@ -28,6 +28,12 @@ Cada fase se cierra con un checkpoint con el coder antes de avanzar a la siguien
 | Tiempo real | WebSocket (Spring WebSocket / STOMP) | Requisito no negociable: "la mensajería debe funcionar en tiempo real". |
 | Autenticación | JWT de acceso de vida corta + refresh token con rotación | Requisito explícito de la prueba; refresh token se almacena hasteado en `rw_refresh_tokens` con rotación en cada uso. |
 
-## Recortes de alcance (MVP) — se irán agregando por fase
+## Recortes de alcance (MVP)
 
-_(pendiente de completar conforme se ejecuta cada fase; todo recorte de alcance frente al PDF original se documentará aquí con su justificación)_
+| Recorte | Justificación |
+|---|---|
+| Sin registro público de usuarios (se provisionan directo en BD, o vía `SeedLoader` con `database/seed/seed.json`) | El PDF pide login, no registro. Reduce la superficie de auth a lo estrictamente pedido; evita decisiones de negocio no especificadas (¿quién aprueba altas? ¿dominio de correo permitido?). |
+| Documentación de API solo vía Swagger/OpenAPI (`springdoc`, `/swagger-ui.html`), sin colección Postman exportada | El PDF acepta "Swagger/OpenAPI publicado **o** colección Postman exportada" como alternativas; Swagger ya vive embebido en el backend sin mantenimiento aparte. |
+| WebSocket con `SimpleBrokerMessageHandler` en memoria (Spring), sin broker externo (RabbitMQ/Redis) | Suficiente para una sola instancia de backend (alcance de MVP); escalar a múltiples instancias del backend requeriría un broker externo para propagar mensajes entre procesos — no forma parte del requisito. |
+| `database/tests/` vacío: las pruebas contra PostgreSQL real (Fase 7) se implementaron como tests de integración Java+Testcontainers en `backend/riwi-infrastructure/src/test`, no como scripts `.sql` sueltos | Reutiliza el mismo pipeline de build/CI de Maven (`./mvnw test`) en vez de un segundo runner de pruebas SQL; cumple igual el requisito ("mínimo dos pruebas automatizadas contra PostgreSQL real"). |
+| Estados de carga (*spinner*) y preservación explícita de la posición de scroll al cargar mensajes anteriores no implementados; los errores de historial solo se muestran vía el toast global, no inline en la lista | Recorte consciente para priorizar el resto del MVP dentro del tiempo disponible. Pendiente si se retoma el proyecto — no bloquea ningún criterio de aceptación no negociable (RLS, tiempo real, copiloto). |

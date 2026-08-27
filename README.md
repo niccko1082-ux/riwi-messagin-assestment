@@ -10,8 +10,11 @@ solo con base en mensajes a los que el usuario tiene acceso.
 - **Frontend**: React + Vite + TypeScript, WebSocket (STOMP) para tiempo real.
 - **IA**: NVIDIA NIM (API compatible con OpenAI) para embeddings y chat completion.
 
-Ver `docs/data-model.md` y `ARCHITECTURE.md` para el diseño detallado, y `DECISIONS.md` para
-las decisiones técnicas registradas durante el desarrollo.
+Ver `docs/data-model.md` (con diagrama E-R, [`docs/er-diagram.png`](docs/er-diagram.png)) y
+`ARCHITECTURE.md` para el diseño detallado, `DECISIONS.md` para las decisiones técnicas
+registradas durante el desarrollo, y [`docs/evidencias/`](docs/evidencias/) para capturas de
+ejecución real (login, mensaje en tiempo real, búsqueda, copiloto con citas y negativa
+correcta por falta de permisos).
 
 ## Arranque rápido (Docker Compose)
 
@@ -33,9 +36,29 @@ Servicios:
 | PostgreSQL | localhost:5432                 |
 
 `docker compose up` levanta Postgres, aplica las 10 migraciones (`database/migrations/`,
-servicio `migrate`, se ejecuta una sola vez) y arranca backend y frontend. Los usuarios se
-provisionan directamente en base de datos (no hay registro público) — ver
-`database/seed/seed.json` para datos de ejemplo, o insertar filas en `rw_users`.
+servicio `migrate`, se ejecuta una sola vez) y arranca backend y frontend. No hay registro
+público — los usuarios se cargan con el corpus semilla (siguiente sección) o se insertan a
+mano en `rw_users`.
+
+### Cargar el corpus semilla
+
+`database/seed/seed.json` trae 5 usuarios, 3 canales y 10 mensajes (contraseña de todos:
+`RiwiCoder#2026`; ver su `_meta` para el caso de prueba negativo de RLS). Se carga con el
+propio backend (hashea las contraseñas con BCrypt al cargar, vía `SeedLoader`) — idempotente,
+se puede volver a correr sin duplicar filas:
+
+```bash
+docker compose run --rm --no-deps \
+  -v "$(pwd)/database/seed:/seed:ro" \
+  backend java -jar app.jar --riwi.seed.enabled=true --riwi.seed.file=/seed/seed.json
+```
+
+Sin Docker, con el backend corriendo localmente (ver más abajo):
+
+```bash
+./mvnw spring-boot:run -pl riwi-api -am \
+  -Dspring-boot.run.arguments="--riwi.seed.enabled=true --riwi.seed.file=../database/seed/seed.json"
+```
 
 Para detener y limpiar (incluye el volumen de datos de Postgres):
 
@@ -84,7 +107,6 @@ npm run dev   # http://localhost:5173, usa frontend/.env.development
 
 ## Variables de entorno
 
-Ver `.env.example` — nunca commitear `.env` con secretos reales (ya está en
-`.gitignore`). `NVIDIA_API_KEY` se obtiene en https://build.nvidia.com; los modelos por
+Ver `.env.example`. `NVIDIA_API_KEY` se obtiene en https://build.nvidia.com; los modelos por
 defecto (`NVIDIA_CHAT_MODEL`/`NVIDIA_EMBEDDING_MODEL`) fueron verificados contra
 `/v1/models` — NVIDIA retira modelos con frecuencia, revisar si alguno responde 404/410.

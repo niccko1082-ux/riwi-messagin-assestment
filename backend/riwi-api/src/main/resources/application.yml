@@ -22,6 +22,14 @@ riwi:
     url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:bd_nombre_apellido_clan}
     username: ${DB_WORKER_USER:rw_worker}
     password: ${DB_WORKER_PASSWORD:}
+  seed:
+    enabled: ${SEED_ENABLED:false}
+    file: ${SEED_FILE:database/seed/seed.json}
+    # rw_app (spring.datasource) solo tiene SELECT: sembrar usuarios/canales/mensajes
+    # requiere el superusuario, igual que 'migrate' en docker-compose.yml.
+    superuser-url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:bd_nombre_apellido_clan}
+    superuser-username: ${DB_SUPERUSER:postgres}
+    superuser-password: ${DB_SUPERUSER_PASSWORD:}
   ai:
     nvidia:
       base-url: ${NVIDIA_BASE_URL:https://integrate.api.nvidia.com/v1}
