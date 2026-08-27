@@ -1,0 +1,21 @@
+# Claude Code local settings
+.claude/settings.local.json
+
+# Environment secrets
+.env
+
+# Java / Maven / Gradle
+target/
+build/
+*.class
+
+# Node / frontend
+node_modules/
+dist/
+.vite/
+
+# OS / editor
+.DS_Store
+*.log
+.idea/
+.vscode/

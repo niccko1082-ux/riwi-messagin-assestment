@@ -1,0 +1,49 @@
+{
+  "_meta": {
+    "description": "Corpus de carga inicial para la plataforma de mensajería interna de Riwi Co. Usado como (1) datos semilla para desarrollo/pruebas y (2) fuente de análisis para derivar entidades, relaciones y reglas de negocio (ver docs/data-model.md).",
+    "password_note": "Todas las contraseñas de ejemplo son 'RiwiCoder#2026', se hashean con BCrypt en tiempo de carga por el backend, nunca se guarda texto plano.",
+    "rls_test_case": "El usuario 'valentina.rios' NO es miembro del canal 'canal-directivo-confidencial'. Se usa como caso negativo obligatorio en las pruebas automatizadas (Fase 7): debe ser rechazada al intentar leer, buscar o consultar vía copiloto ese canal."
+  },
+  "users": [
+    { "ref": "u-camilo",    "first_name": "Camilo",   "last_name": "Zapata",  "email": "camilo.zapata@riwi.io",   "job_title": "Tech Lead",          "password": "RiwiCoder#2026" },
+    { "ref": "u-valentina", "first_name": "Valentina","last_name": "Rios",    "email": "valentina.rios@riwi.io",  "job_title": "Backend Developer",  "password": "RiwiCoder#2026" },
+    { "ref": "u-esteban",   "first_name": "Esteban",  "last_name": "Poly",    "email": "esteban.poly@riwi.io",    "job_title": "Fullstack Coder",    "password": "RiwiCoder#2026" },
+    { "ref": "u-marcela",   "first_name": "Marcela",  "last_name": "Duque",   "email": "marcela.duque@riwi.io",   "job_title": "Product Manager",    "password": "RiwiCoder#2026" },
+    { "ref": "u-andres",    "first_name": "Andres",   "last_name": "Higuita", "email": "andres.higuita@riwi.io",  "job_title": "CTO",                "password": "RiwiCoder#2026" }
+  ],
+  "channels": [
+    {
+      "ref": "ch-proyecto-fenix",
+      "name": "proyecto-fenix",
+      "channel_type": "group",
+      "created_by": "u-camilo",
+      "members": ["u-camilo", "u-valentina", "u-esteban", "u-marcela"]
+    },
+    {
+      "ref": "ch-dm-camilo-esteban",
+      "name": null,
+      "channel_type": "direct",
+      "created_by": "u-camilo",
+      "members": ["u-camilo", "u-esteban"]
+    },
+    {
+      "ref": "canal-directivo-confidencial",
+      "name": "canal-directivo-confidencial",
+      "channel_type": "group",
+      "created_by": "u-andres",
+      "members": ["u-andres", "u-camilo", "u-marcela"]
+    }
+  ],
+  "messages": [
+    { "channel": "ch-proyecto-fenix", "sender": "u-camilo",    "content": "Equipo, el corte de sprint del Proyecto Fénix queda para el viernes 4 de septiembre. Por favor actualicen sus tareas en el board." },
+    { "channel": "ch-proyecto-fenix", "sender": "u-valentina", "content": "Listo, ya dejé el endpoint de autenticación con refresh token rotativo funcionando en staging." },
+    { "channel": "ch-proyecto-fenix", "sender": "u-esteban",   "content": "El frontend del panel del copiloto ya consume el WebSocket de mensajería en tiempo real, falta el estado de carga diferida del historial." },
+    { "channel": "ch-proyecto-fenix", "sender": "u-marcela",   "content": "Perfecto, para la demo del viernes necesitamos que el copiloto pueda responder preguntas sobre el estado del sprint citando los mensajes fuente." },
+    { "channel": "ch-proyecto-fenix", "sender": "u-camilo",    "content": "Confirmado: la base de datos usa PostgreSQL con Row Level Security activo sobre canales y mensajes, el rol de aplicación no tiene BYPASSRLS." },
+    { "channel": "ch-dm-camilo-esteban", "sender": "u-camilo",  "content": "Esteban, revisa por favor el índice único parcial de los embedding jobs, quiero evitar duplicados en vuelo." },
+    { "channel": "ch-dm-camilo-esteban", "sender": "u-esteban", "content": "Ya quedó, uso WHERE status = 'pending' en el índice parcial." },
+    { "channel": "canal-directivo-confidencial", "sender": "u-andres",  "content": "El presupuesto aprobado para el Proyecto Fénix del próximo trimestre es de 180 millones de pesos, información confidencial hasta el anuncio oficial." },
+    { "channel": "canal-directivo-confidencial", "sender": "u-marcela", "content": "Recibido, no se comparte con el resto del equipo hasta la reunión directiva del 10 de septiembre." },
+    { "channel": "canal-directivo-confidencial", "sender": "u-camilo",  "content": "De acuerdo, mantengo la confidencialidad. Este canal es un buen caso de prueba negativo para RLS." }
+  ]
+}
