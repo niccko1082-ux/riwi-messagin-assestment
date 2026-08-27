@@ -1,8 +1,6 @@
 # Claude Code local settings
 .claude/settings.local.json
 
-# Environment secrets
-.env
 
 # Java / Maven / Gradle
 target/
